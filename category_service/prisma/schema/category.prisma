@@ -1,0 +1,5 @@
+model categories {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(50)
+  desc       String   @db.VarChar(250)
+}
