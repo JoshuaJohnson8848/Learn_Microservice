@@ -10,7 +10,7 @@ const categoryProviderRPC = {
     return ClientProxyFactory.create({
       transport: Transport.RMQ,
       options: {
-        urls: [process.env.RabbitMQ],
+        urls: [process.env.RabbitMQ_PROD],
         queue: 'category-queue',
         queueOptions: {
           durable: false,
