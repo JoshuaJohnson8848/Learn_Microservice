@@ -1,0 +1,70 @@
+version: '3.8'  # Specify the Compose file version
+
+services:
+  postgresDB-category:  # PostgreSQL for categories
+    container_name: postgresDB-category
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Joshua_555
+      POSTGRES_DB: CategoryService
+    ports:
+      - "5431:5432"
+    networks:
+      - joshua-network
+
+  postgresDB-product:  # PostgreSQL for products
+    container_name: postgresDB-product
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Joshua_555
+      POSTGRES_DB: ProductService
+    ports:
+      - "5432:5432"  # Change host port to avoid conflict
+    networks:
+      - joshua-network
+
+  category_service_container:  # Your category service
+    container_name: category_service_container
+    build:
+      context: ./category_service  # Path to your category service
+    ports:
+      - "3000:3000"  # Change host port as needed
+    environment:
+      DATABASE_URL: "postgresql://postgres:Joshua_555@postgresDB-category:5432/CategoryService?schema=public"
+    depends_on:
+      - postgresDB-category
+      - rabbitmq  # Assuming it depends on RabbitMQ
+    networks:
+      - joshua-network
+    command: >
+      sh -c "./wait-for-it.sh postgresDB-category:5432 --timeout=90 -- npx prisma migrate deploy && npm run start:dev --host 0.0.0.0"
+
+  product_service_container:  # Your product service
+    container_name: product_service_container
+    build:
+      context: ./product_service  # Path to your product service
+    ports:
+      - "5000:5000"  # Change host port as needed
+    environment:
+      DATABASE_URL: "postgresql://postgres:Joshua_555@postgresDB-product:5432/ProductService?schema=public"
+    depends_on:
+      - postgresDB-product
+      - rabbitmq  # Assuming it depends on RabbitMQ
+    networks:
+      - joshua-network
+    command: >
+      sh -c "./wait-for-it.sh postgresDB-product:5432 --timeout=90 -- npx prisma migrate deploy && npm run start:dev --host 0.0.0.0"
+
+  rabbitmq:  # RabbitMQ service
+    container_name: rabbitmq
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"  # RabbitMQ port
+      - "15672:15672"  # RabbitMQ management console
+    networks:
+      - joshua-network
+
+networks:
+  joshua-network:  # Define a custom network for your services
